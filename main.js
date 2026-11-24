@@ -3117,6 +3117,10 @@ function seasons(sourceId) {
   if (found.length < 2) {
     return fallback();
   }
+  const hasCurrent = found.some((season) => season.drama !== null && season.drama.sourceId === sourceId);
+  if (!hasCurrent) {
+    return fallback();
+  }
   if (found.length === ids.length) {
     for (const season of found) {
       cacheWrite("seasons:" + season.drama.sourceId, found, 30 * minuteMs);
