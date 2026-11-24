@@ -3032,13 +3032,13 @@ function seasonPackBody(ids, fields) {
 }
 
 function seasonDrama(sourceId, deadline) {
-  let entry;
+  let drama;
   try {
-    entry = appDetail(sourceId);
+    drama = detail(sourceId).drama;
   } catch (error) {
     return null;
   }
-  const drama = Object.assign({}, entry.drama);
+  drama = Object.assign({}, drama, { sourceId: sourceId });
   if (!drama.onlineDate && remainingMs(deadline) > 0) {
     try {
       drama.onlineDate = parseSortDetail(fetchSiteText(siteBaseUrl + "/detail?series_id=" + queryEscape(sourceId)), sourceId).onlineDate;
@@ -3126,13 +3126,15 @@ function seasons(sourceId) {
 }
 
 function searchSeasonsFallback(sourceId, deadline) {
-  if (remainingMs(deadline) <= 0) {
-    return [];
-  }
+  const fallbackDeadline = Date.now() + seasonTimeoutMs;
   let currentTitle = "";
   try {
-    currentTitle = displayTitle(appDetail(sourceId).drama);
+    const entry = detail(sourceId);
+    currentTitle = displayTitle(entry.drama || {});
   } catch (error) {
+    return [];
+  }
+  if (currentTitle === "" || currentTitle === "短剧") {
     return [];
   }
   const parsed = parseSeason(currentTitle);
@@ -3151,7 +3153,7 @@ function searchSeasonsFallback(sourceId, deadline) {
   }
   let dramas;
   try {
-    dramas = fetchSearchNames(base, deadline);
+    dramas = fetchSearchNames(base, fallbackDeadline);
   } catch (error) {
     return [];
   }
@@ -3173,7 +3175,7 @@ function searchSeasonsFallback(sourceId, deadline) {
     byNumber.set(number, drama);
   }
   if (!bySourceId.has(sourceId)) {
-    const current = seasonDrama(sourceId, deadline);
+    const current = seasonDrama(sourceId, fallbackDeadline);
     if (current !== null) {
       byNumber.set(currentNumber, current);
       bySourceId.set(sourceId, true);
